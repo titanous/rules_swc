@@ -1,0 +1,10 @@
+{
+    "minify": true,
+    "jsc": {
+        "experimental": {
+            "plugins": [
+                "__PLUGINS__"
+            ]
+        }
+    }
+}

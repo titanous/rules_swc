@@ -41,6 +41,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         "//swc/private:swc",
+        "//swc/private:swc_plugin",
         "@bazel_skylib//lib:types",
         "@bazel_skylib//rules:write_file",
     ],
@@ -50,4 +51,13 @@ bzl_library(
     name = "toolchain",
     srcs = ["toolchain.bzl"],
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "providers",
+    srcs = ["providers.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//swc/private:swc_plugin_config_info",
+    ],
 )

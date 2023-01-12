@@ -1,5 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
+exports_files(["plugins.swcrc"])
+
 bzl_library(
     name = "toolchains_repo",
     srcs = ["toolchains_repo.bzl"],
@@ -13,10 +15,26 @@ bzl_library(
 )
 
 bzl_library(
+    name = "swc_plugin_config_info",
+    srcs = ["swc_plugin_config_info.bzl"],
+    visibility = ["//swc:__subpackages__"],
+)
+
+bzl_library(
+    name = "swc_plugin",
+    srcs = ["swc_plugin.bzl"],
+    visibility = ["//swc:__subpackages__"],
+    deps = [
+        ":swc_plugin_config_info",
+    ],
+)
+
+bzl_library(
     name = "swc",
     srcs = ["swc.bzl"],
     visibility = ["//swc:__subpackages__"],
     deps = [
+        ":swc_plugin_config_info",
         "@aspect_bazel_lib//lib:platform_utils",
         "@aspect_rules_js//js:libs",
         "@aspect_rules_js//js:providers",

@@ -1,0 +1,15 @@
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+
+exports_files(
+    ["swc_plugin_transform_imports.wasm"],
+    visibility = ["//examples/plugins:__pkg__"],
+)
+
+npm_package(
+    name = "package",
+    srcs = [
+        "package.json",
+        "swc_plugin_transform_imports.wasm",
+    ],
+    visibility = ["//examples/plugins:__pkg__"],
+)

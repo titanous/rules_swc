@@ -1,9 +1,11 @@
 "Internal implementation details"
 
 load("@aspect_bazel_lib//lib:platform_utils.bzl", "platform_utils")
+load("@aspect_bazel_lib//lib:paths.bzl", "relative_file")
 load("@aspect_rules_js//js:libs.bzl", "js_lib_helpers")
 load("@aspect_rules_js//js:providers.bzl", "js_info")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":swc_plugin_config_info.bzl", "SwcPluginConfigInfo")
 
 _attrs = {
     "srcs": attr.label_list(
@@ -34,11 +36,20 @@ _attrs = {
         doc = "label of a configuration file for swc, see https://swc.rs/docs/configuration/swcrc",
         allow_single_file = True,
     ),
+    "plugins": attr.label_list(
+        doc = "swc compilation plugins, created with swc_plugin rule",
+        providers = [[DefaultInfo, SwcPluginConfigInfo]],
+    ),
     "out_dir": attr.string(
         doc = "base directory for output files",
     ),
     "root_dir": attr.string(
         doc = "a subdirectory under the input package which should be consider the root directory of all the input files",
+    ),
+    "_swcrc_plugins_template": attr.label(
+        doc = "swcrc used when plugins are specified with no swcrc",
+        default = "@aspect_rules_swc//swc/private:plugins.swcrc",
+        allow_single_file = True,
     ),
 }
 
@@ -175,6 +186,26 @@ def _impl(ctx):
     args.add_all(ctx.attr.args)
     args.add_all(["--source-maps", ctx.attr.source_maps])
 
+    swcrc = ctx.file.swcrc
+    if ctx.attr.plugins:
+        swcrc_template = swcrc
+        if not swcrc_template:
+            swcrc_template = ctx.file._swcrc_plugins_template
+
+        swcrc = ctx.actions.declare_file("{}_plugins_swcrc.json".format(ctx.label.name))
+
+        plugins = []
+        for p in ctx.attr.plugins:
+            plugins.append("[" + json.encode("./" + relative_file(p[DefaultInfo].files.to_list()[0].path, swcrc.path)) + "," + p[SwcPluginConfigInfo].config + "]")
+
+        ctx.actions.expand_template(
+            template = swcrc_template,
+            output = swcrc,
+            substitutions = {
+                '"__PLUGINS__"': ",".join(plugins),
+            },
+        )
+
     if ctx.attr.output_dir:
         if len(ctx.attr.srcs) != 1:
             fail("Under output_dir, there must be a single entry in srcs")
@@ -192,12 +223,13 @@ def _impl(ctx):
         ])
 
         src_args = ctx.actions.args()
-        if ctx.attr.swcrc:
+        if swcrc:
             src_args.add_all([
                 "--config-file",
-                ctx.file.swcrc.path,
+                swcrc.path,
             ])
-            inputs.append(ctx.file.swcrc)
+            inputs.append(swcrc)
+            inputs.extend(ctx.files.plugins)
 
         _swc_action(
             ctx,
@@ -238,12 +270,13 @@ def _impl(ctx):
             inputs = [src]
             inputs.extend(ctx.toolchains["@aspect_rules_swc//swc:toolchain_type"].swcinfo.tool_files)
 
-            if ctx.attr.swcrc:
+            if swcrc:
                 src_args.add_all([
                     "--config-file",
-                    ctx.file.swcrc.path,
+                    swcrc.path,
                 ])
-                inputs.append(ctx.file.swcrc)
+                inputs.append(swcrc)
+                inputs.extend(ctx.files.plugins)
 
             src_args.add_all([
                 "--out-file",

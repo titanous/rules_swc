@@ -1,0 +1,5 @@
+{
+  "name": "@swc/plugin-transform-imports",
+  "version": "1.5.35",
+  "main": "swc_plugin_transform_imports.wasm"
+}

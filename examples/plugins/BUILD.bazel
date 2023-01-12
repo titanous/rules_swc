@@ -1,0 +1,64 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@aspect_rules_swc//swc:defs.bzl", "swc", "swc_plugin")
+
+swc_plugin(
+    name = "npm_plugin",
+    src = "//examples/plugins/plugin-transform-imports:package",
+    config = {
+        "lodash": {
+            "transform": "lodash/{{member}}",
+        },
+    },
+)
+
+swc_plugin(
+    name = "file_plugin",
+    src = "//examples/plugins/plugin-transform-imports:swc_plugin_transform_imports.wasm",
+    config = json.encode({
+        "lodash2": {
+            "transform": "lodash/test/{{member}}",
+        },
+    }),
+)
+
+swc(
+    name = "simple",
+    out_dir = "simple",
+    plugins = [
+        ":npm_plugin",
+        ":file_plugin",
+    ],
+)
+
+swc(
+    name = "rcdict",
+    out_dir = "rcdict",
+    plugins = [
+        ":npm_plugin",
+        ":file_plugin",
+    ],
+    swcrc = {
+        "jsc": {
+            "target": "es2015",
+        },
+    },
+)
+
+swc(
+    name = "rc",
+    out_dir = "rc",
+    plugins = [
+        ":npm_plugin",
+        ":file_plugin",
+    ],
+    swcrc = "minify.swcrc",
+)
+
+write_source_files(
+    name = "test",
+    files = {
+        "expected_simple.js": ":simple/in.js",
+        "expected_rc.js": ":rc/in.js",
+        "expected_rcdict.js": ":rcdict/in.js",
+    },
+)

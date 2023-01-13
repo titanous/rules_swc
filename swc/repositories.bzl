@@ -53,15 +53,13 @@ def _determine_version(rctx):
 
 def _swc_repo_impl(repository_ctx):
     version = _determine_version(repository_ctx)
-    if not versions.is_at_least("1.3.25", version.lstrip("v")):
-        fail(_SWC_TOO_OLD.format(version))
     filename = "swc-" + repository_ctx.attr.platform
 
     # The binaries of the SWC cli releases for windows are suffixed with ".exe"
     if repository_ctx.attr.platform.startswith("win32"):
         filename += ".exe"
 
-    url = "https://github.com/swc-project/swc/releases/download/{0}/{1}".format(
+    url = "https://github.com/titanous/swc/releases/download/{0}/{1}".format(
         version,
         filename,
     )
